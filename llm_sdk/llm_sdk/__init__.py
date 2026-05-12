@@ -8,10 +8,21 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer, PreTrainedModel, logging
 from huggingface_hub import hf_hub_download
 import os
+import json
+from pathlib import Path
 
 
 logging.set_verbosity_error()  # keep the console clean
 
+def load_json_data(FileName: str):
+    root = Path(__file__).parent.parent.parent
+    file_path = root / "data" / "input" / FileName
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: {FileName} not found at {file_path}")
+        return None
 
 class Small_LLM_Model:
     """Utility class wrapping a lightweight Hugging Face causal-LM for fast, low-memory experimentation.
