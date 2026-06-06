@@ -1,7 +1,23 @@
 import llm_sdk
 import json
+import argparse
 
-if __name__ == "__main__":
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="...")
+    parser.add_argument("--functions_definition", 
+        default="data/input/functions_definition.json",
+        help="Path to the JSON file containing function definitions")
+    parser.add_argument("--input",
+        default="data/input/function_calling_tests.json", 
+        help="Path to the JSON file containing natural language prompts")
+    parser.add_argument("--output",
+        default="data/output/function_calls.json",
+        help="Path to the output JSON file where results will be written")
+    return parser.parse_args()
+
+
+def loader():
     sdk_model = llm_sdk.Small_LLM_Model()
     
     with open(sdk_model.get_path_to_vocab_file()) as f:
@@ -23,3 +39,7 @@ if __name__ == "__main__":
     # Check what encoding "42" gives us
     result = sdk_model.encode("42")
     print(f"\nHow '42' is encoded: {result}")
+
+if __name__ == "__main__":
+    args = parse_args()
+    print(args)
