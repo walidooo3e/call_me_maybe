@@ -2,6 +2,7 @@ import llm_sdk
 import json
 import argparse
 from src.loader import load_function_definitions, load_prompts
+from src.generator import select_function
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="...")
@@ -44,6 +45,6 @@ if __name__ == "__main__":
     args = parse_args()
     functions = load_function_definitions(args.functions_definition)
     prompts = load_prompts(args.input)
-    print(f"functions:\n {functions}")
-    print(f"prompts:\n {prompts}")
-
+    sdk_model = llm_sdk.Small_LLM_Model()
+    for prompt in prompts:
+        select_function(prompt, functions, sdk_model)
