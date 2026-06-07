@@ -1,7 +1,7 @@
 import llm_sdk
 import json
 import argparse
-
+from src.loader import load_function_definitions, load_prompts
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="...")
@@ -42,4 +42,8 @@ def loader():
 
 if __name__ == "__main__":
     args = parse_args()
-    print(args)
+    functions = load_function_definitions(args.functions_definition)
+    prompts = load_prompts(args.input)
+    print(f"functions:\n {functions}")
+    print(f"prompts:\n {prompts}")
+
