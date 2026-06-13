@@ -23,8 +23,9 @@ def select_function(
         if generated_str in function_names:
             break
         valid_tokens = get_valid_tokens_for_function_name(generated_str, function_names, vocab)
+        valid_set = set(valid_tokens)
         for i in range(len(logits)):
-            if i not in valid_tokens:
+            if i not in valid_set:
                 logits[i] = -float('inf')
         next_token = logits.index(max(logits))
         if next_token == 198:
@@ -45,27 +46,33 @@ def extract_arguments(
 ) -> dict[str, any]:
     arguments = {}
     for param_name, param in function.parameters.items():
-        param_prompt = f"User request: '{prompt}'\nFunction: {function.name} - {function.description}\nParameter '{param_name}' value:"
-        print(param_prompt)
+        if param.type == Types.string:
+            param_prompt = f"Extract '{param_name}' from: {prompt}\n{param_name}=\""
+        else:
+            param_prompt = f"User request: '{prompt}'\nFunction: {function.name} - {function.description}\nParameter '{param_name}' value:"
         input_ids = model.encode(param_prompt)
         input_ids = input_ids[0].tolist()
         generated = []
+        quote_count = 0
         while len(generated) < 20:
             logits = model.get_logits_from_input_ids(input_ids)
             generated_str = model.decode(generated)
             if param.type == Types.number:
                 valid_tokens = get_valid_tokens_for_numbers(vocab)
+                valid_set = set(valid_tokens)
             elif param.type == Types.string:
                 valid_tokens = get_valid_tokens_for_string(vocab)
+                valid_set = set(valid_tokens)
             elif param.type == Types.boolean:
                 valid_tokens = get_valid_tokens_for_boolean(generated_str, vocab)
+                valid_set = set(valid_tokens)
             for i in range(len(logits)):
-                if i not in valid_tokens:
+                if i not in valid_set:
                     logits[i] = -float('inf')
             next_token = logits.index(max(logits))
             if next_token == 198:
                 break
-            if next_token == 1:  # closing quote
+            if param.type == Types.string and next_token in (1, 698):
                 break
             generated.append(next_token)
             input_ids.append(next_token)
@@ -82,9 +89,6 @@ def extract_arguments(
                         break
                 except ValueError:
                     pass
-        raw = model.decode(generated)
-        print(f"Raw tokens: {generated}")
-        print(f"Raw string: {repr(raw)}")
         if param.type == Types.number:
                 arguments[param_name] = float(model.decode(generated))
         elif param.type == Types.boolean:

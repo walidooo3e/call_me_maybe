@@ -39,5 +39,6 @@ if __name__ == "__main__":
     for prompt in prompts:
         function = select_function(prompt, functions, sdk_model, vocab)
         arguments = extract_arguments(prompt, functions_map[function], sdk_model, vocab)
+        print(prompt)
         print(f"function: {function}, arguments: {arguments}")
         
