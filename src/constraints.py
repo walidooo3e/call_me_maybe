@@ -1,5 +1,3 @@
-import llm_sdk
-
 def get_valid_tokens_for_function_name(
     generated: str,
     function_names: list[str],
@@ -38,6 +36,7 @@ def get_valid_tokens_for_boolean(generated: str, vocab: dict[str, int]) -> list[
         for char in next_chars:
             if token_str.startswith(char):
                 valid_tokens.append(token_id)
+                break
     return valid_tokens
 
     

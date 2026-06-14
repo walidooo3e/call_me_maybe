@@ -32,8 +32,6 @@ def select_function(
             break
         generated.append(next_token)
         input_ids.append(next_token)
-    logits = model.get_logits_from_input_ids(input_ids)
-    next_token = logits.index(max(logits))
     result = model.decode(generated)
     return result
 
@@ -45,27 +43,40 @@ def extract_arguments(
     vocab: dict[str, int]
 ) -> dict[str, any]:
     arguments = {}
+    number_tokens = set(get_valid_tokens_for_numbers(vocab)) | {198}
+    string_tokens = set(get_valid_tokens_for_string(vocab))
     for param_name, param in function.parameters.items():
         if param.type == Types.string:
-            param_prompt = f"Extract '{param_name}' from: {prompt}\n{param_name}=\""
+            param_prompt = (
+                f"Extract only the {param_name} from this request: '{prompt}'\n"
+                f"The {param_name} is: \""
+            )
         else:
-            param_prompt = f"User request: '{prompt}'\nFunction: {function.name} - {function.description}\nParameter '{param_name}' value:"
+            if arguments:
+                already = "\n".join(f"{k}={v}" for k, v in arguments.items())
+                param_prompt = (
+                    f"From: '{prompt}'\n"
+                    f"{already}\n"
+                    f"{param_name}="
+                )
+            else:
+                param_prompt = (
+                    f"From: '{prompt}'\n"
+                    f"The value of {param_name} is:\n"
+                    f"{param_name}="
+                )
         input_ids = model.encode(param_prompt)
         input_ids = input_ids[0].tolist()
         generated = []
-        quote_count = 0
         while len(generated) < 20:
             logits = model.get_logits_from_input_ids(input_ids)
             generated_str = model.decode(generated)
             if param.type == Types.number:
-                valid_tokens = get_valid_tokens_for_numbers(vocab)
-                valid_set = set(valid_tokens)
+                valid_set = number_tokens
             elif param.type == Types.string:
-                valid_tokens = get_valid_tokens_for_string(vocab)
-                valid_set = set(valid_tokens)
+                valid_set = string_tokens
             elif param.type == Types.boolean:
-                valid_tokens = get_valid_tokens_for_boolean(generated_str, vocab)
-                valid_set = set(valid_tokens)
+                valid_set = set(get_valid_tokens_for_boolean(generated_str, vocab))
             for i in range(len(logits)):
                 if i not in valid_set:
                     logits[i] = -float('inf')
@@ -77,20 +88,8 @@ def extract_arguments(
             generated.append(next_token)
             input_ids.append(next_token)
             generated_str = model.decode(generated)
-            if param.type == Types.number:
-                try:
-                    float(generated_str)
-                    # check if next best token is still numeric
-                    next_valid = get_valid_tokens_for_numbers(vocab)
-                    # find best token among valid ones
-                    best_next = max(next_valid, key=lambda t: logits[t])
-                    next_str = model.decode([best_next])
-                    if not next_str.strip().replace('.','').replace('-','').isdigit():
-                        break
-                except ValueError:
-                    pass
         if param.type == Types.number:
-                arguments[param_name] = float(model.decode(generated))
+                arguments[param_name] = float(model.decode(generated).rstrip('.'))
         elif param.type == Types.boolean:
             arguments[param_name] = True if model.decode(generated) == "true" else False
         elif param.type == Types.string:
