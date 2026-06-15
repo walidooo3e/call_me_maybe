@@ -1,22 +1,11 @@
-import llm_sdk
 import json
-import argparse
-from src.loader import load_function_definitions, load_prompts
-from src.generator import select_function, extract_arguments
 import os
+from src.parser import parse_args
+from src.generator import extract_arguments, select_function
+from src.loader import load_function_definitions, load_prompts
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="...")
-    parser.add_argument("--functions_definition", 
-        default="data/input/functions_definition.json",
-        help="Path to the JSON file containing function definitions")
-    parser.add_argument("--input",
-        default="data/input/function_calling_tests.json", 
-        help="Path to the JSON file containing natural language prompts")
-    parser.add_argument("--output",
-        default="data/output/function_calls.json",
-        help="Path to the output JSON file where results will be written")
-    return parser.parse_args()
+import llm_sdk
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -32,9 +21,14 @@ if __name__ == "__main__":
         function = select_function(prompt, functions, sdk_model, vocab)
         selected = functions_map.get(function)
         if selected is None:
-            print(f"Warning: could not find function '{function}', skipping prompt")
+            print(
+                f"Warning: could not find function '{function}', "
+                "skipping prompt"
+            )
             continue
-        arguments = extract_arguments(prompt, functions_map[function], sdk_model, vocab)
+        arguments = extract_arguments(
+            prompt, functions_map[function], sdk_model, vocab
+        )
         results.append({
             "prompt": prompt,
             "name": function,
@@ -43,5 +37,4 @@ if __name__ == "__main__":
         print(prompt)
         print(f"function: {function}, arguments: {arguments}")
     with open(args.output, 'w') as f:
-        json.dump(results, f, indent = 2)
-        
+        json.dump(results, f, indent=2)

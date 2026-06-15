@@ -3,6 +3,7 @@ def get_valid_tokens_for_function_name(
     function_names: list[str],
     vocab: dict[str, int]
 ) -> list[int]:
+    """A constrainer for function name generation"""
     remaining = [name for name in function_names if name.startswith(generated)]
     next_chars = set()
     for name in remaining:
@@ -16,15 +17,28 @@ def get_valid_tokens_for_function_name(
                 break
     return valid_tokens
 
+
 def get_valid_tokens_for_string(vocab: dict[str, int]) -> list[int]:
-    return [token_id for token_str, token_id in vocab.items() if token_id != 198]
+    """A constrainer for string arguments generation"""
+    return [
+        token_id for token_str, token_id in vocab.items() if token_id != 198
+    ]
+
+
 def get_valid_tokens_for_numbers(vocab: dict[str, int]) -> list[int]:
+    """A constrainer for number arguments generation"""
     valid_tokens = []
     for token_str, token_id in vocab.items():
-        if token_str.strip().replace('.', '').replace('-', '').isdigit() or token_str == '.' or token_str == '-':
+        clean_str = token_str.strip().replace('.', '').replace('-', '')
+        if clean_str.isdigit() or token_str == '.' or token_str == '-':
             valid_tokens.append(token_id)
     return valid_tokens
-def get_valid_tokens_for_boolean(generated: str, vocab: dict[str, int]) -> list[int]:
+
+
+def get_valid_tokens_for_boolean(
+    generated: str, vocab: dict[str, int]
+) -> list[int]:
+    """A constrainer for boolean arguments generation"""
     allowed = ["true", "false"]
     remaining = [b for b in allowed if b.startswith(generated)]
     next_chars = set()
@@ -38,5 +52,3 @@ def get_valid_tokens_for_boolean(generated: str, vocab: dict[str, int]) -> list[
                 valid_tokens.append(token_id)
                 break
     return valid_tokens
-
-    

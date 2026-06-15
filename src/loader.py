@@ -1,8 +1,10 @@
+import json
 from pydantic import ValidationError
 from src.models import FunctionDefinition
-import json
+
 
 def load_function_definitions(path: str) -> list[FunctionDefinition]:
+    """A loader function that loads function definitions from a json"""
     try:
         function_list = []
         with open(path, "r") as f:
@@ -15,13 +17,17 @@ def load_function_definitions(path: str) -> list[FunctionDefinition]:
         print(f"No file found at {path}")
         return []
     except ValidationError:
-        print(f"The file at path: {path} is malstructured.")
+        print(
+            f"The file at path: {path} is malstructured."
+        )
         return []
     except json.JSONDecodeError:
         print("Please use a path to a valid json.")
         return []
 
+
 def load_prompts(path: str) -> list[str]:
+    """A loader function that loads function definitions from a json"""
     try:
         prompt_list = []
         with open(path, "r") as f:
