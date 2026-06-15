@@ -1,17 +1,16 @@
-import llm_sdk
 from src.constraints import (
     get_valid_tokens_for_boolean,
     get_valid_tokens_for_function_name,
     get_valid_tokens_for_numbers,
     get_valid_tokens_for_string,
 )
-from src.models import FunctionDefinition, Types
+from src.models import FunctionDefinition, Types, LLMModel
 
 
 def select_function(
     prompt: str,
     functions: list[FunctionDefinition],
-    model: llm_sdk.Small_LLM_Model,
+    model: LLMModel,
     vocab: dict[str, int]
 ) -> str:
     """A generator of the function name"""
@@ -48,7 +47,7 @@ def select_function(
 def extract_arguments(
     prompt: str,
     function: FunctionDefinition,
-    model: llm_sdk.Small_LLM_Model,
+    model: LLMModel,
     vocab: dict[str, int]
 ) -> dict[str, float | bool | str]:
     """A generator of the arguments"""

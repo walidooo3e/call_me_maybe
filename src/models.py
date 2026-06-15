@@ -1,5 +1,16 @@
 from pydantic import BaseModel
 from enum import Enum
+from typing import Protocol, Any
+
+
+class LLMModel(Protocol):
+    """Protocol defining the interface for the LLM SDK model."""
+    def get_logits_from_input_ids(
+        self, input_ids: list[int]
+    ) -> list[float]: ...
+    def get_path_to_vocab_file(self) -> str: ...
+    def encode(self, text: str) -> Any: ...
+    def decode(self, token_ids: list[int]) -> str: ...
 
 
 class Types(str, Enum):

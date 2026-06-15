@@ -12,7 +12,7 @@ if __name__ == "__main__":
     functions = load_function_definitions(args.functions_definition)
     functions_map = {f.name: f for f in functions}
     prompts = load_prompts(args.input)
-    sdk_model = llm_sdk.Small_LLM_Model()
+    sdk_model = llm_sdk.Small_LLM_Model(model_name=args.model)  # type: ignore[attr-defined]
     with open(sdk_model.get_path_to_vocab_file()) as f:
         vocab = json.load(f)
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
