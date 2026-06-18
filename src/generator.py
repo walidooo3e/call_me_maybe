@@ -54,53 +54,37 @@ def extract_arguments(
     arguments: dict[str, float | bool | str] = {}
     number_tokens = set(get_valid_tokens_for_numbers(vocab)) | {198}
     string_tokens = set(get_valid_tokens_for_string(vocab))
-    
     for param_name, param in function.parameters.items():
         if param.type == Types.string:
-            if function.name == "fn_substitute_string_with_regex":
-                if param_name == "regex":
-                    param_prompt = (
-                        "Instruction: Generate the raw regex pattern to fulfill the request. Do not use capturing groups or extra parentheses.\n\n"
-                        "Request: Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS\n"
-                        "Regex: \"\\d+\"\n\n"
-                        "Request: Replace all vowels in 'Programming is fun' with asterisks\n"
-                        "Regex: \"[aeiouAEIOU]\"\n\n"
-                        "Request: Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'\n"
-                        "Regex: \"\\bcat\\b\"\n\n"
-                        f"Request: {prompt}\n"
-                        "Regex: \""
-                    )
-                elif param_name == "source_string":
-                    param_prompt = (
-                        "Instruction: Extract the exact target sentence/string that needs modification.\n\n"
-                        "Request: Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS\n"
-                        "String: \"Hello 34 I'm 233 years old\"\n\n"
-                        "Request: Replace all vowels in 'Programming is fun' with asterisks\n"
-                        "String: \"Programming is fun\"\n\n"
-                        "Request: Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'\n"
-                        "String: \"The cat sat on the mat with another cat\"\n\n"
-                        f"Request: {prompt}\n"
-                        "String: \""
-                    )
-                elif param_name == "replacement":
-                     param_prompt = (
-                        "Instruction: Extract the literal replacement string. Convert descriptions like 'asterisks' to symbols.\n\n"
-                        "Request: Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS\n"
-                        "Replacement: \"NUMBERS\"\n\n"
-                        "Request: Replace all vowels in 'Programming is fun' with asterisks\n"
-                        "Replacement: \"*\"\n\n"
-                        "Request: Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'\n"
-                        "Replacement: \"dog\"\n\n"
-                        f"Request: {prompt}\n"
-                        "Replacement: \""
-                    )
-            else:
-                param_prompt = (
-                    f"Extract only the exact {param_name} "
-                    f"from this request: '{prompt}'\n"
-                    "in lower case"
-                    f"The {param_name} is: \""
-                )
+            context = (
+                f"Function: {function.description}\n"
+                "You are extracting raw input values to call this function. "
+                "The function itself performs any computation when it runs. "
+                "Never compute or transform the result yourself — provide the "
+                "value exactly as the function needs it as input.\n"
+            )
+            param_prompt = (
+                context
+                + "If the requested value already appears"
+                "in the request, copy "
+                "it exactly as written, preserving case."
+                "If it does not appear "
+                "and must be created from a description, derive it.\n\n"
+                "Request: Reverse the string 'hello'\n"
+                "s: \"hello\"\n\n"
+                "Request: Greet shrek\n"
+                "name: \"shrek\"\n\n"
+                "Request: Match any sequence of digits in the text\n"
+                "pattern: \"\\d+\"\n\n"
+                "Request: Use asterisks to mark each vowel\n"
+                "symbol: \"*\"\n\n"
+                "Request: Swap the word 'up' with 'down' in the text\n"
+                "pattern: \"up\"\n\n"
+                "Request: Replace every space with a single dash\n"
+                "replacement: \"-\"\n\n"
+                f"Request: {prompt}\n"
+                f"{param_name}: \""
+            )
         else:
             if arguments:
                 already = "\n".join(f"{k}={v}" for k, v in arguments.items())
@@ -115,15 +99,12 @@ def extract_arguments(
                     f"The value of {param_name} is:\n"
                     f"{param_name}="
                 )
-                
         input_ids = model.encode(param_prompt)
         input_ids = input_ids[0].tolist()
         generated: list[int] = []
-        
         while len(generated) < 20:
             logits = model.get_logits_from_input_ids(input_ids)
             generated_str = model.decode(generated)
-            
             if param.type == Types.number:
                 valid_set = number_tokens
             elif param.type == Types.string:
@@ -133,26 +114,18 @@ def extract_arguments(
                     generated_str, vocab
                 )
                 valid_set = set(valid_tokens)
-                
             for i in range(len(logits)):
                 if i not in valid_set:
                     logits[i] = -float('inf')
-                    
             next_token = logits.index(max(logits))
-            
             if next_token == 198:  # Newline tracking
                 break
-                
-            # 1. Append the token first to keep any characters trailing right before the quote
             generated.append(next_token)
             input_ids.append(next_token)
-            
-            # 2. Check if the closing quote is caught inside our sequence now
             if param.type == Types.string:
                 generated_str = model.decode(generated)
                 if '"' in generated_str:
                     break
-                    
         if param.type == Types.number:
             decoded_val = model.decode(generated).rstrip('.')
             arguments[param_name] = float(decoded_val)
@@ -163,5 +136,4 @@ def extract_arguments(
             # Cleanly grab only the valid sequence before the quote boundary
             raw_decoded = model.decode(generated)
             arguments[param_name] = raw_decoded.split('"')[0].strip()
-            
     return arguments
