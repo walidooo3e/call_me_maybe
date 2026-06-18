@@ -172,9 +172,9 @@ $$f^* = \arg\max_{f_i \in \mathcal{F}} \; \Pr(f_i \mid p),$$
  
 followed by parameter estimation
  
-$$\theta^* = \arg\max_{\theta \in \Theta(f^*)} \; \Pr(\theta \mid p, f^*),$$
- 
-where $\Theta(f^*)$ is the admissible parameter space determined by the schema of $f^*$.
+$$\theta^{\ast} = \arg\max_{\theta \in \Theta(f^{\ast})} \; \Pr(\theta \mid p, f^{\ast})$$
+
+where $\Theta(f^{\ast})$ is the admissible parameter space determined by the schema of $f^*$.
  
 ### 3. Methodological Contributions
  
@@ -218,7 +218,7 @@ This is the correct asymptotic improvement: from $O(n \cdot k_t)$ to $O(n)$. Giv
  
 A major design decision is to let Python construct the JSON structure entirely. Let $J$ denote the output JSON object. Instead of asking the model to emit the full tree $J$, the system computes
  
-$$J = \mathcal{A}(p, f^*, \theta^*),$$
+$$J = \mathcal{A}(p, f^{\ast}, \theta^{\ast}),$$
  
 where $\mathcal{A}$ is a deterministic assembler implemented in Python.
  
